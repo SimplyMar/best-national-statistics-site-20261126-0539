@@ -1,0 +1,43 @@
+// Searchable 32-Series National Indicator Catalog and Official Survey Methodology Register.
+
+export const INDICATOR_CATALOG = [
+  { code: "SNA-GDP-N", domain: "Macro", title: "Nominal Gross Domestic Product (CY)", latest: "¥609.3T", change: "+2.9%", period: "CY 2024", freq: "Quarterly", agency: "Cabinet Office ESRI", survey: "System of National Accounts (2015 base)" },
+  { code: "SNA-GDP-R", domain: "Macro", title: "Real GDP Chain-Linked Growth Rate", latest: "+0.1%", change: "-1.4 pp", period: "CY 2024", freq: "Quarterly", agency: "Cabinet Office ESRI", survey: "Quarterly Estimates of GDP" },
+  { code: "SNA-GDP-FY", domain: "Macro", title: "Fiscal Year Nominal GDP", latest: "¥642.4T", change: "+3.7%", period: "FY 2024", freq: "Annual", agency: "Cabinet Office ESRI", survey: "Annual Report on National Accounts" },
+  { code: "SNA-PCE", domain: "Macro", title: "Private Final Consumption Expenditure", latest: "¥329.8T", change: "+2.2%", period: "CY 2024", freq: "Quarterly", agency: "Cabinet Office ESRI", survey: "SNA Expenditure Components" },
+  { code: "SNA-CAPEX", domain: "Macro", title: "Private Non-Residential Investment", latest: "¥104.7T", change: "+4.6%", period: "CY 2024", freq: "Quarterly", agency: "Cabinet Office ESRI", survey: "SNA Private Capital Formation" },
+  { code: "METI-IIP", domain: "Macro", title: "Industrial Production Index (2020=100)", latest: "101.8", change: "-2.4%", period: "CY 2024", freq: "Monthly", agency: "METI", survey: "Indices of Industrial Production" },
+  { code: "CPI-CORE", domain: "Prices", title: "Core CPI (All Items Less Fresh Food)", latest: "+2.5%", change: "Idx 107.9", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Consumer Price Index (2020=100)" },
+  { code: "CPI-ALL", domain: "Prices", title: "Headline All-Items Consumer Price Index", latest: "108.5", change: "+2.7%", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Consumer Price Index (2020=100)" },
+  { code: "CPI-CORECORE", domain: "Prices", title: "CPI Less Fresh Food & Energy", latest: "+2.4%", change: "Idx 106.8", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Consumer Price Index (2020=100)" },
+  { code: "BOJ-CGPI", domain: "Prices", title: "Corporate Goods Price Index (Producer)", latest: "123.1", change: "+2.3%", period: "CY 2024", freq: "Monthly", agency: "Bank of Japan", survey: "CGPI (2020=100)" },
+  { code: "BOJ-CALL", domain: "Prices", title: "Uncollateralized Overnight Call Rate", latest: "0.50%", change: "+60 bp", period: "Jan 2025", freq: "MPM", agency: "Bank of Japan", survey: "Monetary Policy Releases" },
+  { code: "MLIT-LAND", domain: "Prices", title: "National Official Land Price Change", latest: "+2.7%", change: "4th yr up", period: "Jan 2025", freq: "Annual", agency: "MLIT", survey: "Public Notice of Land Prices" },
+  { code: "POP-TOT", domain: "Population", title: "Total Resident Population (incl. Foreign)", latest: "123.80M", change: "-0.44%", period: "Oct 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Current Population Estimates" },
+  { code: "POP-JP", domain: "Population", title: "Japanese Nationals Population", latest: "120.30M", change: "-0.74%", period: "Oct 2024", freq: "Annual", agency: "MIC Statistics Bureau", survey: "Current Population Estimates" },
+  { code: "POP-FOR", domain: "Population", title: "Foreign Resident Population", latest: "3.59M", change: "+10.5%", period: "Oct 2024", freq: "Semi-Annual", agency: "Immigration Services Agency", survey: "Foreign Resident Statistics" },
+  { code: "POP-65P", domain: "Population", title: "Population Share Aged 65 and Over", latest: "29.3%", change: "36.24M", period: "Oct 2024", freq: "Annual", agency: "MIC Statistics Bureau", survey: "Current Population Estimates" },
+  { code: "VIT-TFR", domain: "Population", title: "Total Fertility Rate (Live Births / Woman)", latest: "1.15", change: "-0.05", period: "2024 Prov.", freq: "Annual", agency: "MHLW", survey: "Vital Statistics of Japan" },
+  { code: "VIT-BIRTH", domain: "Population", title: "Annual Live Births", latest: "686,061", change: "-5.7%", period: "2024 Prov.", freq: "Monthly", agency: "MHLW", survey: "Vital Statistics of Japan" },
+  { code: "VIT-DEATH", domain: "Population", title: "Annual Deaths", latest: "1,605,298", change: "+1.9%", period: "2024 Prov.", freq: "Monthly", agency: "MHLW", survey: "Vital Statistics of Japan" },
+  { code: "VIT-LE-F", domain: "Population", title: "Female Life Expectancy at Birth", latest: "87.14 yrs", change: "+0.05y", period: "2023/24", freq: "Annual", agency: "MHLW", survey: "Abridged Life Tables" },
+  { code: "VIT-LE-M", domain: "Population", title: "Male Life Expectancy at Birth", latest: "81.09 yrs", change: "+0.04y", period: "2023/24", freq: "Annual", agency: "MHLW", survey: "Abridged Life Tables" },
+  { code: "LFS-UNEMP", domain: "Labor", title: "Seasonally Adjusted Unemployment Rate", latest: "2.5%", change: "-0.1 pp", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Labour Force Survey" },
+  { code: "LFS-EMP", domain: "Labor", title: "Total Employed Persons", latest: "67.81M", change: "+0.34M", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Labour Force Survey" },
+  { code: "LFS-FEM", domain: "Labor", title: "Female Prime-Age (25–54) Employment Rate", latest: "81.6%", change: "+0.8 pp", period: "CY 2024", freq: "Monthly", agency: "MIC Statistics Bureau", survey: "Labour Force Survey" },
+  { code: "MLS-WAGE", domain: "Labor", title: "Total Monthly Cash Earnings (5+ Workers)", latest: "¥339.5k", change: "+2.9%", period: "CY 2024", freq: "Monthly", agency: "MHLW", survey: "Monthly Labour Survey" },
+  { code: "MHLW-JOB", domain: "Labor", title: "Active Job-Openings-to-Applicants Ratio", latest: "1.25x", change: "-0.06x", period: "CY 2024", freq: "Monthly", agency: "MHLW", survey: "Employment Referrals for General Workers" },
+  { code: "FIES-INC", domain: "Labor", title: "Median Annual Household Income", latest: "¥4.10M", change: "Mean ¥5.24M", period: "Latest Survey", freq: "Annual", agency: "MHLW", survey: "Comprehensive Survey of Living Conditions" },
+  { code: "MOF-EXP", domain: "Trade & Energy", title: "Merchandise Exports (Customs Basis)", latest: "¥107.09T", change: "+6.2%", period: "CY 2024", freq: "Monthly", agency: "Ministry of Finance", survey: "Trade Statistics of Japan" },
+  { code: "MOF-IMP", domain: "Trade & Energy", title: "Merchandise Imports (Customs Basis)", latest: "¥112.42T", change: "+1.8%", period: "CY 2024", freq: "Monthly", agency: "Ministry of Finance", survey: "Trade Statistics of Japan" },
+  { code: "MOF-CA", domain: "Trade & Energy", title: "Current Account Surplus", latest: "¥29.26T", change: "+29.5%", period: "CY 2024", freq: "Monthly", agency: "MOF / Bank of Japan", survey: "Balance of Payments" },
+  { code: "ANRE-REN", domain: "Trade & Energy", title: "Renewable Share in Power Generation", latest: "23.1%", change: "+0.2 pp", period: "FY 2024", freq: "Annual", agency: "METI ANRE", survey: "Comprehensive Energy Statistics" },
+  { code: "JNTO-VIS", domain: "Trade & Energy", title: "Inbound International Visitors", latest: "36.87M", change: "+47.1%", period: "CY 2024", freq: "Monthly", agency: "JNTO / JTA", survey: "Visitor Arrivals & Consumption" },
+];
+
+export const METHODOLOGY_CARDS = [
+  { title: "National Accounts (SNA 2008)", detail: "Cabinet Office ESRI compiles quarterly and annual GDP using chain-linked Laspeyres volume measures (2015 reference year), balancing production, expenditure, and income approaches." },
+  { title: "Consumer Price Index (2020=100)", detail: "MIC surveys ~200,000 retail prices across 582 basket items in 167 municipalities monthly. Core CPI excludes fresh food; BOJ also tracks CPI ex fresh food and energy." },
+  { title: "Population & Prefectural Benchmarks", detail: "Anchored every 5 years by the complete Population Census; intercensal monthly estimates add MHLW vital birth/death records and ISA cross-border migration flows." },
+  { title: "Labour Force Stratified Sample", detail: "Covers ~40,000 households (~100,000 persons aged 15+) monthly using a two-stage stratified rotation sample, seasonally adjusted via X-12-ARIMA." },
+];

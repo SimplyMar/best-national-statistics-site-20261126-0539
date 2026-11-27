@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Retto Almanac — Japan National Statistics Compendium</title>
+  <meta name="description" content="Independent offline statistical compendium of Japan: macroeconomic accounts, CPI purchasing power, 47-prefecture choropleth atlas, age-sex demographic pyramid, and downloadable open series." />
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADhJREFUeNpiZGBg+M9AAWBiIAAYiaqB8f//f0Q5UirRbaC6BpINpLoGkg2kugaSDURVDQwAAgwADh8EEd6n8s8AAAAASUVORK5CYII=" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#view-root">Skip to statistical content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand-lockup" href="#/" aria-label="Retto Almanac Home">
+        <span class="brand-seal" aria-hidden="true">
+          <svg viewBox="0 0 36 36" width="34" height="34" role="img">
+            <rect x="1" y="1" width="34" height="34" rx="6" fill="#141920" stroke="#C43A27" stroke-width="1.5" />
+            <circle cx="18" cy="14.5" r="6.8" fill="#C43A27" />
+            <path d="M7 26.5h22M10 29.8h16" stroke="#F6F3EC" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <span class="brand-kicker">CIVIC STATISTICAL COMPENDIUM · JAPAN (JP)</span>
+          <span class="brand-title">Retto Almanac</span>
+        </span>
+      </a>
+
+      <nav class="primary-nav" aria-label="Statistical sections">
+        <a class="nav-link is-active" data-route="overview" href="#/">Overview</a>
+        <a class="nav-link" data-route="regions" href="#/regions"><span class="nav-full">47 Prefectures</span><span class="nav-compact">Prefectures</span></a>
+        <a class="nav-link" data-route="demographics" href="#/demographics"><span class="nav-full">Population &amp; Labor</span><span class="nav-compact">Population</span></a>
+        <a class="nav-link" data-route="economy" href="#/economy"><span class="nav-full">Economy &amp; Prices</span><span class="nav-compact">Economy</span></a>
+        <a class="nav-link" data-route="catalog" href="#/catalog"><span class="nav-full">Series Catalog</span><span class="nav-compact">Catalog</span></a>
+      </nav>
+
+      <div class="header-tools">
+        <form id="global-search-form" class="quick-search" role="search">
+          <label class="sr-only" for="global-search-input">Find indicator or prefecture</label>
+          <input id="global-search-input" type="search" placeholder="Search 32 series…" autocomplete="off" />
+        </form>
+        <button id="export-headline-btn" class="btn btn-subtle" type="button" title="Download headline national indicators as CSV">CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="view-root" class="page-shell" tabindex="-1" aria-live="polite"></main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-provenance">
+        <strong>Retto Almanac (2024–2025 Benchmark Edition)</strong> — Independent civic presentation compiled from official public releases of the Statistics Bureau of Japan (MIC), Economic and Social Research Institute (Cabinet Office ESRI), Ministry of Finance (MOF), Ministry of Health, Labour and Welfare (MHLW), Bank of Japan (BOJ), METI ANRE, and IPSS.
+      </div>
+      <div class="footer-actions">
+        <span class="status-pill">100% Offline Static Archive</span>
+        <button id="reset-state-btn" class="link-btn" type="button">Reset interactive filters</button>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
