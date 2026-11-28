@@ -9,6 +9,7 @@ const STORAGE_KEY = "retto_almanac_state_v1";
 const DEFAULT_STATE = {
   overviewMode: "gdp",
   overviewYear: 2024,
+  overviewMapMetric: "age65Pct",
   calcYen: 1000000,
   calcFromYear: 2015,
   calcToYear: 2024,

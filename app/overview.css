@@ -1,0 +1,189 @@
+/* Overview page layout and the prefecture map's styles: indicators, glance strip and the macro chart in the
+   main column; the map, CPI adjuster and release list in the side column (stacked below 1000px); and the
+   atlas's Map / Tiles switch. */
+
+.atlas-view-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.atlas-view-note {
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+
+.pulse-deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 430px;
+  gap: 11px;
+  align-items: start;
+}
+
+.pulse-main,
+.pulse-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pulse-main .kpi-grid,
+.pulse-main .glance-strip {
+  margin-bottom: 0;
+}
+
+.pulse-main .kpi-card {
+  padding: 8px 10px 7px;
+}
+
+.kpi-compact .kpi-label {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-compact .kpi-mid {
+  margin: 2px 0 3px;
+}
+
+.kpi-change {
+  margin-bottom: 5px;
+}
+
+.kpi-change .badge {
+  font-size: 10.5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.pulse-main .kpi-value {
+  font-size: 21px;
+}
+
+.pulse-main .glance-strip {
+  padding: 8px 10px;
+}
+
+.pulse-main .glance-title {
+  flex-basis: 62px;
+}
+
+.pulse-main .glance-value {
+  font-size: 18px;
+}
+
+/* The map panel */
+.map-panel .panel-head {
+  margin-bottom: 6px;
+}
+
+.map-tabs {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.map-tabs .seg-btn {
+  flex: 1;
+}
+
+.map-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.map-bubble {
+  cursor: pointer;
+}
+
+.map-bubble:hover circle,
+.map-bubble:focus circle {
+  stroke: var(--vermilion);
+  stroke-width: 2.4;
+}
+
+.map-bubble:focus {
+  outline: none;
+}
+
+.map-legend-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--ink-500);
+}
+
+.map-legend-row span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.map-legend-row i {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.map-extremes {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--ink-700);
+}
+
+/* The CPI adjuster's verdict column */
+.calc-compare {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-700);
+}
+
+.calc-ok,
+.calc-behind {
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.calc-ok {
+  color: var(--jade);
+}
+
+.calc-behind {
+  color: var(--vermilion);
+}
+
+.release-item a {
+  color: inherit;
+}
+
+@media (max-width: 1000px) {
+  .pulse-deck {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .pulse-main .glance-title {
+    flex-basis: auto;
+  }
+
+  .map-tabs .seg-btn {
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 11.5px;
+  }
+
+  .map-legend-row {
+    font-size: 9.5px;
+  }
+}

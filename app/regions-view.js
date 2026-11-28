@@ -2,6 +2,7 @@
 
 import { PREFECTURES_47, REGION_METRICS } from "./prefectures-data.js";
 import { renderJapanChoroplethSvg } from "./svg-charts.js";
+import { renderPrefectureBubbleMap } from "./japan-map.js";
 import { downloadCsvFile, escapeHtml } from "./export-utils.js";
 
 const REGIONS = ["All", "Hokkaido", "Tohoku", "Kanto", "Chubu", "Kansai", "Chugoku", "Shikoku", "Kyushu", "Okinawa"];
@@ -17,6 +18,7 @@ export function renderRegionsView(state) {
   const search = (state.regionSearch || "").trim().toLowerCase();
   const sortBy = state.regionSort || metricKey;
   const sortDir = state.regionSortDir || "desc";
+  const mapStyle = state.regionMapStyle === "tiles" ? "tiles" : "geo";
 
   const selectedPref = PREFECTURES_47.find((p) => p.code === selectedCode) || PREFECTURES_47[12];
   const comparePrefs = [cmpA, cmpB, cmpC].map((c) => PREFECTURES_47.find((p) => p.code === c) || PREFECTURES_47[0]);
@@ -58,11 +60,20 @@ export function renderRegionsView(state) {
 
     <section class="split-atlas">
       <article class="panel">
+        <div class="atlas-view-switch" role="tablist" aria-label="Map style">
+          <span class="atlas-view-note">${mapStyle === "geo" ? "Bubbles at each prefecture's position, sized by population" : "One equal tile per prefecture, laid out like the archipelago"}</span>
+          <div class="seg-group">
+            <button class="seg-btn ${mapStyle === "geo" ? "is-active" : ""}" data-atlas-style="geo" type="button">Map</button>
+            <button class="seg-btn ${mapStyle === "tiles" ? "is-active" : ""}" data-atlas-style="tiles" type="button">Tiles</button>
+          </div>
+        </div>
         <div class="chart-frame">
-          ${renderJapanChoroplethSvg(PREFECTURES_47, metricMeta, selectedCode, [cmpA, cmpB, cmpC])}
+          ${mapStyle === "geo"
+            ? renderPrefectureBubbleMap(PREFECTURES_47, metricMeta, { width: 612, height: 560, selectedCode, compareCodes: [cmpA, cmpB, cmpC], labelCount: 8, title: `${metricMeta.label} · all 47 prefectures` })
+            : renderJapanChoroplethSvg(PREFECTURES_47, metricMeta, selectedCode, [cmpA, cmpB, cmpC])}
         </div>
         <div class="source-line">
-          <span>Click any prefecture tile to inspect · National benchmark: <strong>${metricMeta.nationalMean}</strong></span>
+          <span>Click a prefecture to inspect it · Japan: <strong>${metricMeta.nationalMean}</strong></span>
           <span>MIC Oct 2024 &amp; Cabinet Office SNA</span>
         </div>
       </article>
@@ -198,6 +209,10 @@ export function bindRegionsInteractions(root, state, updateState) {
       const code = el.getAttribute("data-pref-code") || el.getAttribute("data-pref-row");
       updateState({ selectedPref: code });
     });
+  });
+
+  root.querySelectorAll("[data-atlas-style]").forEach((btn) => {
+    btn.addEventListener("click", () => updateState({ regionMapStyle: btn.getAttribute("data-atlas-style") }));
   });
 
   root.querySelector("#pin-to-slot-b")?.addEventListener("click", () => {
