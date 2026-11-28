@@ -127,14 +127,39 @@ try {
     console.log(`SHOT ${spec.file}: ${statSync(outPath).size} bytes (q=${jpegQuality})`);
   }
 
-  // Test 5th route (#/catalog) on both desktop and mobile + interactive controls across routes
+  // Every route on desktop and phone: no horizontal overflow, and the page renders content.
+  const allRoutes = ["#/", "#/regions", "#/demographics", "#/economy", "#/society", "#/catalog", "#/sources"];
   for (const vp of [{ width: 1280, height: 800, mobile: false }, { width: 390, height: 844, mobile: true }]) {
     await cdp("Emulation.setDeviceMetricsOverride", { ...vp, deviceScaleFactor: 1 });
-    await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/catalog` });
-    await awaitShotReady();
-    const ov = await evalInPage("document.documentElement.scrollWidth - window.innerWidth");
-    if (ov > 1) throw new Error(`Catalog overflow (${ov}px) at width ${vp.width}`);
+    for (const route of allRoutes) {
+      await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html${route}` });
+      await awaitShotReady();
+      const ov = await evalInPage("document.documentElement.scrollWidth - window.innerWidth");
+      if (ov > 1) throw new Error(`Overflow (${ov}px) on ${route} at width ${vp.width}`);
+      const textLength = await evalInPage("document.getElementById('view-root').innerText.length");
+      if (textLength < 400) throw new Error(`Route ${route} rendered only ${textLength} characters at width ${vp.width}`);
+    }
   }
+
+  // Society & Living theme chips and the Sources figure finder must filter what they say.
+  await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/society` });
+  await awaitShotReady();
+  const allCards = await evalInPage("document.querySelectorAll('.fact-card').length");
+  await evalInPage("document.querySelector('[data-society-theme=\"health\"]').click()");
+  await awaitShotReady();
+  const healthCards = await evalInPage("document.querySelectorAll('.fact-card').length");
+  if (!(healthCards > 0 && healthCards < allCards)) throw new Error(`Theme filter did not filter: ${allCards} -> ${healthCards}`);
+  await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/sources` });
+  await awaitShotReady();
+  const allRows = await evalInPage("document.querySelectorAll('.finder-table tbody tr').length");
+  await evalInPage("document.querySelector('[data-agency=\"MHLW\"]').click()");
+  await awaitShotReady();
+  const mhlwRows = await evalInPage("document.querySelectorAll('.finder-table tbody tr').length");
+  if (!(mhlwRows > 0 && mhlwRows < allRows)) throw new Error(`Agency filter did not filter: ${allRows} -> ${mhlwRows}`);
+  await evalInPage("document.getElementById('reset-state-btn').click()");
+  await awaitShotReady();
+  console.log(`FILTERS OK · society ${allCards} -> ${healthCards} · sources ${allRows} -> ${mhlwRows}`);
 
   // Interactive mutations test
   await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });

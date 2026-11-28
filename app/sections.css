@@ -1,0 +1,61 @@
+/* Styles for the Society & Living and Sources & Methods pages. */
+
+/* Seven sections: on desktop widths use the short labels so the navigation stays on one line. */
+@media (min-width: 641px) and (max-width: 1500px) {
+  .primary-nav .nav-full { display: none; }
+  .primary-nav .nav-compact { display: inline; }
+  .primary-nav { flex-wrap: nowrap; }
+}
+
+.theme-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+
+.society-deck { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 16px; }
+.life-chart svg { width: 100%; height: auto; display: block; }
+.axis-label { font: 11px var(--font-sans); fill: #6f685b; }
+.series-end { font: 600 12px var(--font-sans); }
+
+.mix-bar { position: relative; height: 34px; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-subtle); margin: 8px 0 14px; }
+.mix-seg { position: absolute; top: 0; bottom: 0; }
+.mix-legend { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 7px; }
+.mix-legend li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.mix-legend b { margin-left: auto; }
+.mix-key { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.mix-callout { margin: 6px 0 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--indigo-soft); font-size: 13px; line-height: 1.45; color: #23303b; }
+.mix-callout b { font-size: 17px; color: var(--indigo); margin-right: 4px; }
+
+.fact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.fact-card { background: var(--bg-card); border: 1px solid var(--line-soft); border-top: 4px solid var(--accent, var(--indigo)); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; box-shadow: var(--shadow-card); }
+.fact-card.tone-jade { --accent: var(--jade); }
+.fact-card.tone-ochre { --accent: var(--ochre); }
+.fact-card.tone-vermilion { --accent: var(--vermilion); }
+.fact-card.tone-indigo { --accent: var(--indigo); }
+.fact-theme { font: 700 10.5px var(--font-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.fact-label { margin: 0; font: 600 14px var(--font-sans); color: #2a2520; }
+.fact-value { font: 700 25px var(--font-serif); color: #141920; }
+.fact-note { margin: 0; font-size: 12.5px; line-height: 1.4; color: #4f4a42; flex: 1; }
+.fact-source { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 6px; font-size: 11px; color: #6f685b; }
+.fact-source b { white-space: nowrap; color: #2a2520; }
+
+.agency-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.agency-card { text-align: left; font: inherit; color: inherit; cursor: pointer; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: var(--radius-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.agency-card:hover, .agency-card.is-active { border-color: var(--indigo); background: var(--indigo-soft); }
+.agency-name { font: 700 14px var(--font-serif); color: #141920; }
+.agency-uses { font-size: 12px; line-height: 1.35; color: #4f4a42; }
+.agency-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 4px; font-size: 11px; color: #6f685b; }
+.agency-foot b { color: var(--indigo); white-space: nowrap; }
+.finder-tools { display: flex; gap: 8px; align-items: center; }
+.finder-tools .field-input { min-width: 240px; }
+.finder-source { font-size: 12px; color: #4f4a42; }
+
+@media (max-width: 1080px) {
+  .fact-grid, .agency-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .society-deck { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .fact-grid, .agency-grid { grid-template-columns: 1fr; }
+  .fact-value { font-size: 22px; }
+  .finder-tools { flex-wrap: wrap; width: 100%; }
+  .finder-tools .field-input { min-width: 0; flex: 1; }
+  .finder-table th:nth-child(5), .finder-table td:nth-child(5) { display: none; }
+}

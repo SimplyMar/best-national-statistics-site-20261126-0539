@@ -28,6 +28,9 @@ const DEFAULT_STATE = {
   econBaseYear: 2018,
   catalogDomain: "All",
   catalogQuery: "",
+  societyTheme: "All",
+  sourcesQuery: "",
+  sourcesAgency: "All",
 };
 
 function loadState() {
@@ -58,6 +61,8 @@ function parseHashRoute() {
   if (pathPart.startsWith("/demographics")) return "demographics";
   if (pathPart.startsWith("/economy")) return "economy";
   if (pathPart.startsWith("/catalog")) return "catalog";
+  if (pathPart.startsWith("/society")) return "society";
+  if (pathPart.startsWith("/sources")) return "sources";
   return "overview";
 }
 
@@ -95,6 +100,16 @@ async function renderActiveRoute() {
     if (token !== renderToken) return;
     root.innerHTML = mod.renderCatalogView(appState);
     mod.bindCatalogInteractions(root, appState, persistState);
+  } else if (route === "society") {
+    const mod = await import("./society-view.js");
+    if (token !== renderToken) return;
+    root.innerHTML = mod.renderSocietyView(appState);
+    mod.bindSocietyInteractions(root, appState, persistState);
+  } else if (route === "sources") {
+    const mod = await import("./sources-view.js");
+    if (token !== renderToken) return;
+    root.innerHTML = mod.renderSourcesView(appState);
+    mod.bindSourcesInteractions(root, appState, persistState);
   } else {
     root.innerHTML = renderOverviewView(appState);
     bindOverviewInteractions(root, appState, persistState);

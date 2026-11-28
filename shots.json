@@ -1,6 +1,6 @@
 [
   { "file": "1-national-overview.jpg", "path": "#/", "viewport": { "width": 1280, "height": 800 }, "mobile": false },
   { "file": "2-prefectures-atlas.jpg", "path": "#/regions", "viewport": { "width": 1280, "height": 800 }, "mobile": false },
-  { "file": "3-population-pyramid.jpg", "path": "#/demographics", "viewport": { "width": 1280, "height": 800 }, "mobile": false },
-  { "file": "4-economy-mobile.jpg", "path": "#/economy", "viewport": { "width": 390, "height": 844 }, "mobile": true }
+  { "file": "3-society-living.jpg", "path": "#/society", "viewport": { "width": 1280, "height": 800 }, "mobile": false },
+  { "file": "4-sources-mobile.jpg", "path": "#/sources", "viewport": { "width": 390, "height": 844 }, "mobile": true }
 ]
