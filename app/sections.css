@@ -23,6 +23,8 @@
 .mix-callout { margin: 6px 0 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--indigo-soft); font-size: 13px; line-height: 1.45; color: #23303b; }
 .mix-callout b { font-size: 17px; color: var(--indigo); margin-right: 4px; }
 
+.aged-panel { margin-top: 16px; }
+.aged-panel svg { max-width: 760px; }
 .fact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .fact-card { background: var(--bg-card); border: 1px solid var(--line-soft); border-top: 4px solid var(--accent, var(--indigo)); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; box-shadow: var(--shadow-card); }
 .fact-card.tone-jade { --accent: var(--jade); }

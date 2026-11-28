@@ -1,183 +1,168 @@
-// Automated headless Chrome verification & screenshot renderer for Retto Almanac (zero npm packages).
+// Browser check and screenshot maker for Retto Almanac, using only Node and an installed Chrome.
+// It serves app/ with serve.ts, drives headless Chrome over the DevTools protocol, and:
+//   1. renders each scene in shots.json and saves it as a JPEG under 256 KiB in screenshots/;
+//   2. opens every route at desktop and phone width and fails on sideways overflow or an empty page;
+//   3. clicks the filters and the calculator and checks they change what they say they change;
+//   4. fails on any page error or any request that leaves the local server.
+//   node tools/verify-site.mjs
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const rootDir = fileURLToPath(new URL("..", import.meta.url));
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const SITE_PORT = 8192;
+const DEBUG_PORT = 9392;
+const CHROME = process.env.CHROME_PATH ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const SHOT_BUDGET = 242000;
+const ROUTES = ["#/", "#/regions", "#/demographics", "#/economy", "#/society", "#/catalog", "#/sources", "#/glossary"];
+const VIEWPORTS = { desktop: { width: 1280, height: 800, mobile: false }, phone: { width: 390, height: 844, mobile: true } };
+const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 
-const appPort = 8192;
-const cdpPort = 9392;
-const chromeBin = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-const userDataDir = join(rootDir, ".tmp", `chrome-${cdpPort}`);
-
-rmSync(userDataDir, { recursive: true, force: true });
-mkdirSync(userDataDir, { recursive: true });
-mkdirSync(join(rootDir, "screenshots"), { recursive: true });
-
-const httpProc = spawn(process.execPath, [join(rootDir, "serve.ts"), "--port", String(appPort)], { stdio: "ignore" });
-const chromeProc = spawn(chromeBin, [
-  "--headless=new",
-  `--remote-debugging-port=${cdpPort}`,
-  `--user-data-dir=${userDataDir}`,
-  "--window-size=1280,800",
-  "--hide-scrollbars",
-  "--no-first-run",
-  "--no-default-browser-check",
-  "about:blank",
-], { stdio: "ignore" });
-
-let wsEndpoint = null;
-for (let i = 0; i < 60 && !wsEndpoint; i += 1) {
-  try {
-    const pages = await (await fetch(`http://127.0.0.1:${cdpPort}/json/list`)).json();
-    wsEndpoint = pages.find((p) => p.type === "page")?.webSocketDebuggerUrl ?? null;
-  } catch {
-    // Wait for Chrome DevTools endpoint.
-  }
-  if (!wsEndpoint) await delay(200);
-}
-
-if (!wsEndpoint) {
-  chromeProc.kill();
-  httpProc.kill();
-  throw new Error("Failed to connect to headless Chrome CDP port");
-}
-
-const ws = new WebSocket(wsEndpoint);
-await new Promise((resolve) => ws.addEventListener("open", resolve, { once: true }));
-
-let seq = 1;
-const inflight = new Map();
-const runtimeErrors = [];
-const blockedRequests = [];
-
-ws.addEventListener("message", (event) => {
-  const payload = JSON.parse(event.data);
-  if (payload.id && inflight.has(payload.id)) {
-    inflight.get(payload.id)(payload);
-    inflight.delete(payload.id);
-  } else if (payload.method === "Runtime.exceptionThrown") {
-    runtimeErrors.push(payload.params.exceptionDetails.text || "uncaught exception");
-  } else if (payload.method === "Runtime.consoleAPICalled" && payload.params.type === "error") {
-    runtimeErrors.push(payload.params.args.map((a) => a.value ?? a.description).join(" "));
-  } else if (payload.method === "Network.requestWillBeSent") {
-    const reqUrl = payload.params.request.url;
-    if (!reqUrl.startsWith(`http://127.0.0.1:${appPort}`) && !reqUrl.startsWith("data:") && !reqUrl.startsWith("blob:") && reqUrl !== "about:blank") {
-      blockedRequests.push(reqUrl);
+/** Start the static server and Chrome; resolve with Chrome's page socket URL. */
+async function launch() {
+  const profile = join(ROOT, ".tmp", "chrome-verify");
+  rmSync(profile, { recursive: true, force: true });
+  mkdirSync(profile, { recursive: true });
+  const server = spawn(process.execPath, [join(ROOT, "serve.ts"), "--port", String(SITE_PORT)], { stdio: "ignore" });
+  const chrome = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profile}`, "--hide-scrollbars", "--no-first-run", "--no-default-browser-check", "about:blank"], { stdio: "ignore" });
+  for (let attempt = 0; attempt < 75; attempt += 1) {
+    try {
+      const targets = await (await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/list`)).json();
+      const page = targets.find((target) => target.type === "page");
+      if (page) return { server, chrome, socketUrl: page.webSocketDebuggerUrl };
+    } catch {
+      // Chrome is still starting.
     }
+    await wait(200);
   }
-});
+  server.kill();
+  chrome.kill();
+  throw new Error("Chrome never opened its debugging port");
+}
 
-const cdp = (method, params = {}) =>
-  new Promise((resolve) => {
-    const id = seq++;
-    inflight.set(id, resolve);
-    ws.send(JSON.stringify({ id, method, params }));
+/** A tiny DevTools client that also records page errors and off-site requests. */
+async function connect(socketUrl) {
+  const socket = new WebSocket(socketUrl);
+  await new Promise((done) => socket.addEventListener("open", done, { once: true }));
+  const waiting = new Map();
+  const pageErrors = [];
+  const offsite = [];
+  let nextId = 1;
+  socket.addEventListener("message", ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.id && waiting.has(message.id)) {
+      waiting.get(message.id)(message);
+      waiting.delete(message.id);
+    } else if (message.method === "Runtime.exceptionThrown") {
+      pageErrors.push(message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text);
+    } else if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error") {
+      pageErrors.push(message.params.args.map((arg) => arg.value ?? arg.description).join(" "));
+    } else if (message.method === "Network.requestWillBeSent") {
+      const url = message.params.request.url;
+      if (!/^(http:\/\/127\.0\.0\.1:\d+|data:|blob:|about:blank)/.test(url)) offsite.push(url);
+    }
   });
-
-const evalInPage = async (expression) => {
-  const res = await cdp("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-  if (res.result?.exceptionDetails) {
-    throw new Error(res.result.exceptionDetails.exception?.description ?? "Page evaluation failed");
-  }
-  return res.result?.result?.value;
-};
-
-const awaitShotReady = async () => {
-  for (let i = 0; i < 80; i += 1) {
-    if ((await evalInPage("window.__shotReady === true")) === true) return;
-    await delay(100);
-  }
-  throw new Error("Timed out waiting for window.__shotReady");
-};
-
-try {
-  await cdp("Runtime.enable");
-  await cdp("Page.enable");
-  await cdp("Network.enable");
-
-  const shotSpecs = JSON.parse(readFileSync(join(rootDir, "shots.json"), "utf8"));
-  for (const spec of shotSpecs) {
-    await cdp("Emulation.setDeviceMetricsOverride", {
-      width: spec.viewport.width,
-      height: spec.viewport.height,
-      deviceScaleFactor: 1,
-      mobile: Boolean(spec.mobile),
+  const send = (method, params = {}) =>
+    new Promise((done) => {
+      const id = nextId++;
+      waiting.set(id, done);
+      socket.send(JSON.stringify({ id, method, params }));
     });
-    await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html${spec.path}` });
-    await awaitShotReady();
-    await delay(180);
+  const run = async (expression) => {
+    const reply = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+    if (reply.result?.exceptionDetails) throw new Error(`In page: ${expression}\n${reply.result.exceptionDetails.exception?.description ?? "failed"}`);
+    return reply.result?.result?.value;
+  };
+  await send("Runtime.enable");
+  await send("Page.enable");
+  await send("Network.enable");
+  return { socket, send, run, pageErrors, offsite };
+}
 
-    const hOverflow = await evalInPage("document.documentElement.scrollWidth - window.innerWidth");
-    if (hOverflow > 1) {
-      throw new Error(`Horizontal overflow (${hOverflow}px) on ${spec.file}`);
-    }
+/** Open a route at a viewport and wait until the app says the view is drawn. */
+async function open(page, route, viewport) {
+  await page.send("Emulation.setDeviceMetricsOverride", { width: viewport.width, height: viewport.height, deviceScaleFactor: 1, mobile: viewport.mobile });
+  await page.send("Page.navigate", { url: `http://127.0.0.1:${SITE_PORT}/index.html${route}` });
+  await settle(page);
+}
 
-    let jpegQuality = spec.mobile ? 82 : 88;
-    let imgBuf = Buffer.from((await cdp("Page.captureScreenshot", { format: "jpeg", quality: jpegQuality })).result.data, "base64");
-    while (imgBuf.byteLength > 242000 && jpegQuality > 54) {
-      jpegQuality -= 8;
-      imgBuf = Buffer.from((await cdp("Page.captureScreenshot", { format: "jpeg", quality: jpegQuality })).result.data, "base64");
-    }
+async function settle(page) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if ((await page.run("window.__shotReady === true")) === true) return;
+    await wait(100);
+  }
+  throw new Error("The view never signalled __shotReady");
+}
 
-    const outPath = join(rootDir, "screenshots", spec.file);
-    writeFileSync(outPath, imgBuf);
-    console.log(`SHOT ${spec.file}: ${statSync(outPath).size} bytes (q=${jpegQuality})`);
+/** Capture a JPEG, lowering quality until it fits the gate's size budget. */
+async function captureJpeg(page, startQuality) {
+  let quality = startQuality;
+  let bytes;
+  do {
+    bytes = Buffer.from((await page.send("Page.captureScreenshot", { format: "jpeg", quality })).result.data, "base64");
+    quality -= 6;
+  } while (bytes.byteLength > SHOT_BUDGET && quality > 50);
+  return { bytes, quality: quality + 6 };
+}
+
+/** Click something, wait for the redraw, and return a count from the page. */
+async function clickAndCount(page, selector, countExpression) {
+  await page.run(`document.querySelector(${JSON.stringify(selector)}).click()`);
+  await settle(page);
+  return page.run(countExpression);
+}
+
+const { server, chrome, socketUrl } = await launch();
+const page = await connect(socketUrl);
+try {
+  mkdirSync(join(ROOT, "screenshots"), { recursive: true });
+  for (const scene of JSON.parse(readFileSync(join(ROOT, "shots.json"), "utf8"))) {
+    await open(page, scene.path, scene.viewport.width < 600 ? { ...VIEWPORTS.phone, ...scene.viewport } : { ...VIEWPORTS.desktop, ...scene.viewport });
+    await wait(200);
+    const { bytes, quality } = await captureJpeg(page, scene.mobile ? 82 : 88);
+    writeFileSync(join(ROOT, "screenshots", scene.file), bytes);
+    console.log(`SHOT ${scene.file}: ${bytes.byteLength} bytes (q=${quality})`);
   }
 
-  // Every route on desktop and phone: no horizontal overflow, and the page renders content.
-  const allRoutes = ["#/", "#/regions", "#/demographics", "#/economy", "#/society", "#/catalog", "#/sources", "#/glossary"];
-  for (const vp of [{ width: 1280, height: 800, mobile: false }, { width: 390, height: 844, mobile: true }]) {
-    await cdp("Emulation.setDeviceMetricsOverride", { ...vp, deviceScaleFactor: 1 });
-    for (const route of allRoutes) {
-      await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html${route}` });
-      await awaitShotReady();
-      const ov = await evalInPage("document.documentElement.scrollWidth - window.innerWidth");
-      if (ov > 1) throw new Error(`Overflow (${ov}px) on ${route} at width ${vp.width}`);
-      const textLength = await evalInPage("document.getElementById('view-root').innerText.length");
-      if (textLength < 400) throw new Error(`Route ${route} rendered only ${textLength} characters at width ${vp.width}`);
+  for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+    for (const route of ROUTES) {
+      await open(page, route, viewport);
+      const overflow = await page.run("document.documentElement.scrollWidth - window.innerWidth");
+      if (overflow > 1) throw new Error(`${route} overflows sideways by ${overflow}px on ${name}`);
+      const textLength = await page.run("document.getElementById('view-root').innerText.length");
+      if (textLength < 400) throw new Error(`${route} shows only ${textLength} characters on ${name}`);
     }
   }
 
-  // Society & Living theme chips and the Sources figure finder must filter what they say.
-  await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-  await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/society` });
-  await awaitShotReady();
-  const allCards = await evalInPage("document.querySelectorAll('.fact-card').length");
-  await evalInPage("document.querySelector('[data-society-theme=\"health\"]').click()");
-  await awaitShotReady();
-  const healthCards = await evalInPage("document.querySelectorAll('.fact-card').length");
-  if (!(healthCards > 0 && healthCards < allCards)) throw new Error(`Theme filter did not filter: ${allCards} -> ${healthCards}`);
-  await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/sources` });
-  await awaitShotReady();
-  const allRows = await evalInPage("document.querySelectorAll('.finder-table tbody tr').length");
-  await evalInPage("document.querySelector('[data-agency=\"MHLW\"]').click()");
-  await awaitShotReady();
-  const mhlwRows = await evalInPage("document.querySelectorAll('.finder-table tbody tr').length");
-  if (!(mhlwRows > 0 && mhlwRows < allRows)) throw new Error(`Agency filter did not filter: ${allRows} -> ${mhlwRows}`);
-  await evalInPage("document.getElementById('reset-state-btn').click()");
-  await awaitShotReady();
-  console.log(`FILTERS OK · society ${allCards} -> ${healthCards} · sources ${allRows} -> ${mhlwRows}`);
+  await open(page, "#/society", VIEWPORTS.desktop);
+  const allFacts = await page.run("document.querySelectorAll('.fact-card').length");
+  const healthFacts = await clickAndCount(page, '[data-society-theme="health"]', "document.querySelectorAll('.fact-card').length");
+  if (!(healthFacts > 0 && healthFacts < allFacts)) throw new Error(`Society theme filter: ${allFacts} -> ${healthFacts}`);
 
-  // Interactive mutations test
-  await cdp("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-  await cdp("Page.navigate", { url: `http://127.0.0.1:${appPort}/index.html#/` });
-  await awaitShotReady();
-  await evalInPage("document.querySelector('[data-yen-preset=\"330000\"]').click()");
-  await awaitShotReady();
-  const calcOut = await evalInPage("document.querySelector('.calc-big')?.textContent");
-  await evalInPage("document.getElementById('reset-state-btn').click()");
-  await awaitShotReady();
+  await open(page, "#/sources", VIEWPORTS.desktop);
+  const allRows = await page.run("document.querySelectorAll('.finder-table tbody tr').length");
+  const mhlwRows = await clickAndCount(page, '[data-agency="MHLW"]', "document.querySelectorAll('.finder-table tbody tr').length");
+  if (!(mhlwRows > 0 && mhlwRows < allRows)) throw new Error(`Sources agency filter: ${allRows} -> ${mhlwRows}`);
 
-  if (!calcOut || !calcOut.startsWith("¥")) throw new Error(`Unexpected calculator output: ${calcOut}`);
-  if (runtimeErrors.length > 0) throw new Error(`Runtime errors: ${runtimeErrors.join(" | ")}`);
-  if (blockedRequests.length > 0) throw new Error(`External requests: ${blockedRequests.join(", ")}`);
-  console.log("VERIFICATION OK · calcOut =", calcOut);
+  await open(page, "#/glossary", VIEWPORTS.desktop);
+  const allTerms = await page.run("document.querySelectorAll('.term-card').length");
+  const priceTerms = await clickAndCount(page, '[data-glossary-topic="Prices"]', "document.querySelectorAll('.term-card').length");
+  if (!(priceTerms > 0 && priceTerms < allTerms)) throw new Error(`Glossary topic tabs: ${allTerms} -> ${priceTerms}`);
+
+  await open(page, "#/", VIEWPORTS.desktop);
+  await clickAndCount(page, '[data-yen-preset="330000"]', "1");
+  const converted = await page.run("document.querySelector('.calc-big')?.textContent ?? ''");
+  if (!converted.startsWith("¥")) throw new Error(`CPI converter shows "${converted}"`);
+  await clickAndCount(page, "#reset-state-btn", "1");
+
+  if (page.pageErrors.length) throw new Error(`Page errors: ${page.pageErrors.join(" | ")}`);
+  if (page.offsite.length) throw new Error(`Requests left the local server: ${page.offsite.join(", ")}`);
+  console.log(`FILTERS OK · society ${allFacts} -> ${healthFacts} · sources ${allRows} -> ${mhlwRows} · glossary ${allTerms} -> ${priceTerms}`);
+  console.log(`VERIFICATION OK · ${ROUTES.length} routes × 2 widths · converter ${converted}`);
 } finally {
-  ws.close();
-  chromeProc.kill();
-  httpProc.kill();
-  await delay(400);
+  page.socket.close();
+  chrome.kill();
+  server.kill();
+  await wait(400);
 }

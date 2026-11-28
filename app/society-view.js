@@ -1,7 +1,7 @@
 // Society & Living page: theme filter chips, fact cards with source and year for every figure,
 // a life-expectancy trend chart, a household-mix bar, and CSV export of the shown facts.
 
-import { HOUSEHOLD_MIX_2020, LIFE_EXPECTANCY_SERIES, SOCIETY_FACTS, SOCIETY_THEMES } from "./society-data.js";
+import { AGED_SHARE_SERIES, HOUSEHOLD_MIX_2020, LIFE_EXPECTANCY_SERIES, SOCIETY_FACTS, SOCIETY_THEMES } from "./society-data.js";
 import { downloadCsvFile, showToast } from "./export-utils.js";
 
 const TONE_COLOURS = {
@@ -83,6 +83,30 @@ function householdMixBar() {
     <p class="mix-callout"><b class="num">${alone.share.toFixed(0)}%</b> of homes are one person living alone: more than couples with children for the first time in the 2010 Census, and the gap has grown since.</p>`;
 }
 
+/** Column chart of the share of residents aged 65+, with the UN's "aged" and "super-aged" lines. */
+function agedShareChart() {
+  const width = 560;
+  const height = 210;
+  const pad = { left: 36, right: 12, top: 16, bottom: 28 };
+  const plotHeight = height - pad.top - pad.bottom;
+  const slot = (width - pad.left - pad.right) / AGED_SHARE_SERIES.length;
+  const y = (share) => pad.top + plotHeight * (1 - share / 35);
+  const thresholds = [
+    { share: 14, label: "Aged society (14%)" },
+    { share: 21, label: "Super-aged (21%)" },
+  ]
+    .map((line) => `<line x1="${pad.left}" x2="${width - pad.right}" y1="${y(line.share)}" y2="${y(line.share)}" stroke="#a86814" stroke-dasharray="5 4" /><text x="${pad.left + 4}" y="${y(line.share) - 4}" class="axis-label" fill="#a86814">${line.label}</text>`)
+    .join("");
+  const columns = AGED_SHARE_SERIES.map((point, index) => {
+    const x = pad.left + index * slot + slot * 0.2;
+    const latest = index === AGED_SHARE_SERIES.length - 1;
+    return `<rect x="${x}" y="${y(point.share)}" width="${slot * 0.6}" height="${y(0) - y(point.share)}" rx="2" fill="${latest ? TONE_COLOURS.vermilion : TONE_COLOURS.ochre}" opacity="${latest ? 1 : 0.75}"><title>${point.year}: ${point.share}%</title></rect>
+      <text x="${x + slot * 0.3}" y="${y(point.share) - 5}" text-anchor="middle" class="series-end" fill="#2a2520">${point.share}%</text>
+      <text x="${x + slot * 0.3}" y="${height - 9}" text-anchor="middle" class="axis-label">${point.year}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Share of Japan's population aged 65 and over, 1950 to 2024">${thresholds}${columns}</svg>`;
+}
+
 function factCard(fact) {
   const theme = themeOf(fact.theme);
   return `
@@ -129,7 +153,12 @@ export function renderSocietyView(state) {
         <p class="source-line">MIC Statistics Bureau · 2020 Population Census, private households</p>
       </section>
     </div>
-    <section class="fact-grid" aria-label="Society and living figures">${facts.map(factCard).join("")}</section>`;
+    <section class="fact-grid" aria-label="Society and living figures">${facts.map(factCard).join("")}</section>
+    <section class="panel aged-panel">
+      <div class="panel-head"><div><h2 class="panel-title">The 65+ share has grown sixfold since 1950</h2><p class="panel-subtitle">Share of residents aged 65 and over: Japan passed the “super-aged” mark of 21% in 2007</p></div></div>
+      <div class="chart-frame">${agedShareChart()}</div>
+      <p class="source-line">MIC Statistics Bureau · Population Census (1950–2020) and Population Estimates (Sep 2024)</p>
+    </section>`;
 }
 
 /** Wire the theme chips and the CSV export button. */

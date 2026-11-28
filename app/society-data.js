@@ -56,6 +56,18 @@ export const LIFE_EXPECTANCY_SERIES = [
   { year: 2023, men: 81.09, women: 87.14 },
 ];
 
+/** Share of the population aged 65 and over (%), census years and the latest estimate (MIC). */
+export const AGED_SHARE_SERIES = [
+  { year: 1950, share: 4.9 },
+  { year: 1970, share: 7.1 },
+  { year: 1980, share: 9.1 },
+  { year: 1990, share: 12.1 },
+  { year: 2000, share: 17.4 },
+  { year: 2010, share: 23.0 },
+  { year: 2020, share: 28.6 },
+  { year: 2024, share: 29.3 },
+];
+
 /** Private households by family type, 2020 Census (share of all private households, %). */
 export const HOUSEHOLD_MIX_2020 = [
   { type: "One person", share: 38.0, tone: "indigo" },
