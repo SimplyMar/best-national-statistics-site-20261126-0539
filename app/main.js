@@ -31,6 +31,8 @@ const DEFAULT_STATE = {
   societyTheme: "All",
   sourcesQuery: "",
   sourcesAgency: "All",
+  glossaryTopic: "All",
+  glossaryQuery: "",
 };
 
 function loadState() {
@@ -63,6 +65,7 @@ function parseHashRoute() {
   if (pathPart.startsWith("/catalog")) return "catalog";
   if (pathPart.startsWith("/society")) return "society";
   if (pathPart.startsWith("/sources")) return "sources";
+  if (pathPart.startsWith("/glossary")) return "glossary";
   return "overview";
 }
 
@@ -110,6 +113,11 @@ async function renderActiveRoute() {
     if (token !== renderToken) return;
     root.innerHTML = mod.renderSourcesView(appState);
     mod.bindSourcesInteractions(root, appState, persistState);
+  } else if (route === "glossary") {
+    const mod = await import("./glossary-view.js");
+    if (token !== renderToken) return;
+    root.innerHTML = mod.renderGlossaryView(appState);
+    mod.bindGlossaryInteractions(root, appState, persistState);
   } else {
     root.innerHTML = renderOverviewView(appState);
     bindOverviewInteractions(root, appState, persistState);

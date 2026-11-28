@@ -128,7 +128,7 @@ try {
   }
 
   // Every route on desktop and phone: no horizontal overflow, and the page renders content.
-  const allRoutes = ["#/", "#/regions", "#/demographics", "#/economy", "#/society", "#/catalog", "#/sources"];
+  const allRoutes = ["#/", "#/regions", "#/demographics", "#/economy", "#/society", "#/catalog", "#/sources", "#/glossary"];
   for (const vp of [{ width: 1280, height: 800, mobile: false }, { width: 390, height: 844, mobile: true }]) {
     await cdp("Emulation.setDeviceMetricsOverride", { ...vp, deviceScaleFactor: 1 });
     for (const route of allRoutes) {

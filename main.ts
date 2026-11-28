@@ -1,57 +1,52 @@
-// Retto Almanac — Entrypoint for make.fun best-national-statistics-site-20261126-0539.
-// Stages static site assets (app/) and browser screenshots (screenshots/) into the grading output root,
-// then emits a deterministic dossier.json via the vendored make.fun frontend helper.
+// Retto Almanac hand-in program for make.fun's national statistics site bounty (Node 22, standard
+// library only). It copies the static site (app/) and its screenshots (screenshots/) into the
+// grader's output folder and writes dossier.json with the kit's unchanged frontend library.
+// Locally, MAKEFUN_OUTPUT_DIR stands in for /output:  MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildDossier } from "./vendor/makefun-frontend.ts";
 
-const repoDir = dirname(fileURLToPath(import.meta.url));
-const targetOutputDir = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? "/output");
-const DOSSIER_MAX_BYTES = 1572864;
+const REPOSITORY = dirname(fileURLToPath(import.meta.url));
+const OUTPUT = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? "/output");
 
-const GATE_LIMITS = {
+/** The scorer's caps, so a bad hand-in fails here with a clear message instead of at the gate. */
+const CAPS = {
   text_max_bytes: 163840,
   screenshots: { max: 4, max_bytes: 262144 },
   app_max_files: 993,
   app_max_bytes: 16777216,
 } as const;
+const DOSSIER_CAP_BYTES = 1.5 * 1024 * 1024;
+const SCREENSHOT_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
-function stageNationalStatisticsSite(sourceRoot: string, destinationRoot: string): void {
-  const sourceApp = join(sourceRoot, "app");
-  const sourceShots = join(sourceRoot, "screenshots");
-
-  if (!existsSync(join(sourceApp, "index.html"))) {
-    throw new Error("Retto Almanac staging failed: app/index.html is missing.");
-  }
-
-  mkdirSync(destinationRoot, { recursive: true });
-  cpSync(sourceApp, join(destinationRoot, "app"), { recursive: true });
-
-  const destinationShots = join(destinationRoot, "screenshots");
-  mkdirSync(destinationShots, { recursive: true });
-  if (existsSync(sourceShots)) {
-    const entries = readdirSync(sourceShots)
-      .filter((name) => !name.startsWith("."))
-      .sort();
-    if (entries.length < 3 || entries.length > GATE_LIMITS.screenshots.max) {
-      throw new Error(`Expected 3 to 4 screenshots, found ${entries.length}.`);
-    }
-    for (const file of entries) {
-      const srcFile = join(sourceShots, file);
-      const size = statSync(srcFile).size;
-      if (size <= 0 || size > GATE_LIMITS.screenshots.max_bytes) {
-        throw new Error(`Screenshot ${file} (${size} bytes) is outside the 256 KiB gate limit.`);
-      }
-      cpSync(srcFile, join(destinationShots, file));
-    }
-  }
+/** Copy app/ whole; the site must have its index page. */
+function copySite(): void {
+  const site = join(REPOSITORY, "app");
+  if (!existsSync(join(site, "index.html"))) throw new Error("app/index.html is missing: nothing to hand in.");
+  cpSync(site, join(OUTPUT, "app"), { recursive: true });
 }
 
-stageNationalStatisticsSite(repoDir, targetOutputDir);
-const dossierBytes = buildDossier(targetOutputDir, GATE_LIMITS);
-if (dossierBytes.byteLength > DOSSIER_MAX_BYTES) {
-  throw new Error(`Dossier (${dossierBytes.byteLength} bytes) exceeds 1.5 MiB limit.`);
+/** Copy 3 or 4 screenshots in name order (the first is the cover), checking name and size. */
+function copyScreenshots(): string[] {
+  const folder = join(REPOSITORY, "screenshots");
+  const names = existsSync(folder) ? readdirSync(folder).filter((name) => !name.startsWith(".")).sort() : [];
+  if (names.length < 3 || names.length > CAPS.screenshots.max) throw new Error(`screenshots/ holds ${names.length} images; the gate wants 3 or 4.`);
+  const target = join(OUTPUT, "screenshots");
+  mkdirSync(target, { recursive: true });
+  for (const name of names) {
+    const bytes = statSync(join(folder, name)).size;
+    if (!SCREENSHOT_NAME.test(name)) throw new Error(`Screenshot name ${name} has characters the gate refuses.`);
+    if (bytes === 0 || bytes > CAPS.screenshots.max_bytes) throw new Error(`Screenshot ${name} is ${bytes} bytes; the cap is 256 KiB.`);
+    copyFileSync(join(folder, name), join(target, name));
+  }
+  return names;
 }
-writeFileSync(join(targetOutputDir, "dossier.json"), dossierBytes);
+
+mkdirSync(OUTPUT, { recursive: true });
+copySite();
+copyScreenshots();
+const dossier = buildDossier(OUTPUT, CAPS);
+if (dossier.byteLength > DOSSIER_CAP_BYTES) throw new Error(`dossier.json is ${dossier.byteLength} bytes; the cap is 1.5 MiB.`);
+writeFileSync(join(OUTPUT, "dossier.json"), dossier);

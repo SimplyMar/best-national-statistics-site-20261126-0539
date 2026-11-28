@@ -3,6 +3,7 @@
 import { HEADLINE_KPIS, MACRO_DECADE, RELEASE_CALENDAR } from "./national-summary-data.js";
 import { renderMacroComboSvg, renderSparklineSvg } from "./svg-charts.js";
 import { downloadCsvFile, escapeHtml, formatSigned, formatYen } from "./export-utils.js";
+import { renderGlanceStrip } from "./glance-strip.js";
 
 export function renderOverviewView(state) {
   const mode = state.overviewMode || "gdp";
@@ -54,6 +55,7 @@ export function renderOverviewView(state) {
     </section>
 
     <section class="kpi-grid" aria-label="Headline national indicators">${kpiCards}</section>
+    ${renderGlanceStrip()}
 
     <section class="split-deck">
       <article class="panel">

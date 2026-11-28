@@ -80,6 +80,7 @@ export function renderSourcesView(state) {
       </div>
       <div class="context-meta">
         <span class="badge badge-neutral">${AGENCY_DIRECTORY.length} publishing bodies</span>
+        <a class="btn btn-subtle" href="#/glossary">Glossary →</a>
         <button type="button" class="btn btn-subtle" id="sources-csv-btn">Export ${shown.length} rows CSV</button>
       </div>
     </section>
