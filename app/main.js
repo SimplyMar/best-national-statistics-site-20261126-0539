@@ -120,8 +120,12 @@ async function renderActiveRoute() {
     root.innerHTML = mod.renderGlossaryView(appState);
     mod.bindGlossaryInteractions(root, appState, persistState);
   } else {
-    root.innerHTML = renderOverviewView(appState);
+    // The map panel's data and coastlines come by import(), outside the first load.
+    const map = await import("./overview-map.js");
+    if (token !== renderToken) return;
+    root.innerHTML = renderOverviewView(appState, map.renderMapPanel(appState.overviewMapMetric || "age65Pct"));
     bindOverviewInteractions(root, appState, persistState);
+    map.bindMapPanel(root, appState, persistState);
   }
 
   requestAnimationFrame(() => {

@@ -16,8 +16,8 @@ bounty.
 
 | Page | Route | What a visitor gets |
 | --- | --- | --- |
-| Overview | `#/` | Eight headline indicators with 10-year sparklines, "Japan at a glance", the 2015–2024 GDP / CPI / trade chart with a year scrubber, a CPI purchasing-power converter and the release calendar |
-| Prefectures | `#/regions` | A tile map of all 47 prefectures with five metrics, a selected-prefecture card, a three-way comparison and a sortable directory |
+| Overview | `#/` | Eight headline indicators with 10-year sparklines, "Japan at a glance", the 2015–2024 GDP / CPI / trade chart with a year scrubber, a map of the 47 prefectures (ageing, population, GDP per head or 5-year change, with the highest and lowest named), a CPI adjuster that says whether wages kept up with prices, and the release list |
+| Prefectures | `#/regions` | A geographic map of all 47 prefectures (bubbles sized by population, Okinawa inset) or an equal-tile map, five metrics, a selected-prefecture card, a three-way comparison and a sortable directory |
 | Population | `#/demographics` | Age–sex pyramids (2000, 2015, 2024, 2040 projection), births vs deaths since 1990, employment and pay by industry |
 | Economy | `#/economy` | CPI contributions, a household-income buying-power lab, the electricity mix and trade by partner |
 | Society & Living | `#/society` | 25 figures on health, ageing, births and deaths, households, housing, safety, land and climate, filterable by theme, with a life-expectancy chart and the household mix |
@@ -27,6 +27,12 @@ bounty.
 
 Pages other than the Overview load on demand with `import()`, so the first load stays small.
 Every page works at phone width.
+
+The map is drawn from `app/prefecture-geo.js`: an approximate centre for each prefecture and
+coastlines of the four main islands and Okinawa Island, traced by hand from headlands and ports.
+It is precise enough for a statistical map a few hundred pixels wide, not for navigation, and leaves
+out the smaller islands. `app/japan-map.js` projects it (longitudes scaled by the cosine of the
+latitude), sizes each bubble by population and colours it by the chosen indicator's bins.
 
 ## Run it
 

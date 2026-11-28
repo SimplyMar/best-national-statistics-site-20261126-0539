@@ -3,19 +3,9 @@
 // Every number on it carries its source and period; the map's bubbles open the prefecture atlas.
 
 import { HEADLINE_KPIS, MACRO_DECADE, RELEASE_CALENDAR } from "./national-summary-data.js";
-import { PREFECTURES_47, REGION_METRICS } from "./prefectures-data.js";
 import { renderMacroComboSvg, renderSparklineSvg } from "./svg-charts.js";
-import { renderPrefectureBubbleMap } from "./japan-map.js";
 import { downloadCsvFile, escapeHtml, formatSigned, formatYen } from "./export-utils.js";
 import { renderGlanceStrip } from "./glance-strip.js";
-
-/** The indicators the overview map can colour by, with the release each comes from. */
-const MAP_CHOICES = [
-  { key: "age65Pct", tab: "Aged 65+", source: "MIC Population Estimates, 1 Oct 2024" },
-  { key: "popM", tab: "Population", source: "MIC Population Estimates, 1 Oct 2024" },
-  { key: "gdpPerCapitaM", tab: "GDP / head", source: "Cabinet Office Prefectural Accounts, FY2021" },
-  { key: "popChange5y", tab: "5-yr change", source: "MIC Population Estimates, 2019–2024" },
-];
 
 const MACRO_TABS = [
   { mode: "gdp", label: "GDP & Growth" },
@@ -45,36 +35,6 @@ function renderKpiCard(kpi) {
     <div class="kpi-change"><span class="badge ${badgeClassFor(kpi.tone)}">${escapeHtml(kpi.delta)}</span></div>
     <div class="kpi-foot"><span>${escapeHtml(kpi.source)}</span><strong>${escapeHtml(kpi.period)}</strong></div>
   </a>`;
-}
-
-/** The highest and lowest prefectures on a metric, for the line under the map. */
-export function rankExtremes(metricKey) {
-  const sorted = [...PREFECTURES_47].sort((a, b) => b[metricKey] - a[metricKey]);
-  return { top: sorted[0], bottom: sorted[sorted.length - 1] };
-}
-
-/** The map panel: tabs for the colouring indicator, the bubble map, its extremes and source. */
-function renderMapPanel(mapKey) {
-  const choice = MAP_CHOICES.find((c) => c.key === mapKey) ?? MAP_CHOICES[0];
-  const meta = REGION_METRICS[choice.key];
-  const { top, bottom } = rankExtremes(choice.key);
-  return `<section class="panel map-panel" aria-labelledby="ov-map-heading">
-    <div class="panel-head">
-      <div>
-        <h2 id="ov-map-heading" class="panel-title">The 47 prefectures on the map</h2>
-        <p class="panel-subtitle">Bubble size is population; colour is ${escapeHtml(meta.label.toLowerCase())}</p>
-      </div>
-    </div>
-    <div class="seg-group map-tabs" role="tablist" aria-label="Map indicator">
-      ${MAP_CHOICES.map((c) => `<button class="seg-btn ${c.key === choice.key ? "is-active" : ""}" data-overview-map="${c.key}" type="button" role="tab" aria-selected="${c.key === choice.key}">${c.tab}</button>`).join("")}
-    </div>
-    <div class="map-frame">${renderPrefectureBubbleMap(PREFECTURES_47, meta, { width: 420, height: 400, labelCount: 5, legend: false })}</div>
-    <div class="map-legend-row">
-      ${meta.palette.map((colour, index) => `<span><i style="background:${colour}"></i>${escapeHtml(meta.binLabels[index])}</span>`).join("")}
-    </div>
-    <p class="map-extremes num">Highest <strong>${escapeHtml(top.name)} ${escapeHtml(meta.format(top[choice.key]))}</strong> · lowest <strong>${escapeHtml(bottom.name)} ${escapeHtml(meta.format(bottom[choice.key]))}</strong> · Japan ${escapeHtml(meta.nationalMean)}</p>
-    <div class="source-line"><span>${escapeHtml(choice.source)}</span><a class="link-btn" href="#/regions">Open the atlas →</a></div>
-  </section>`;
 }
 
 /** The ten-year macro chart with its view tabs, year pills and the chosen year's figures. */
@@ -162,11 +122,10 @@ function renderReleaseList() {
   </section>`;
 }
 
-/** The whole overview page for the current state. */
-export function renderOverviewView(state) {
+/** The whole overview page for the current state, with the map panel main.js rendered from overview-map.js. */
+export function renderOverviewView(state, mapPanelHtml = "") {
   const mode = state.overviewMode || "gdp";
   const year = Number(state.overviewYear || 2024);
-  const mapKey = state.overviewMapMetric || "age65Pct";
   return `
     <section class="context-banner" aria-label="About this almanac">
       <div class="context-headline">
@@ -182,31 +141,20 @@ export function renderOverviewView(state) {
         ${renderMacroPanel(mode, year)}
       </div>
       <div class="pulse-side">
-        ${renderMapPanel(mapKey)}
+        ${mapPanelHtml}
         ${renderCpiAdjuster(state)}
         ${renderReleaseList()}
       </div>
     </div>`;
 }
 
-/** Wire the overview's tabs, pills, map bubbles, adjuster and CSV button to the shared state. */
+/** Wire the overview's chart tabs, year pills, adjuster and CSV button to the shared state. */
 export function bindOverviewInteractions(root, state, updateState) {
   root.querySelectorAll("[data-overview-mode]").forEach((button) => {
     button.addEventListener("click", () => updateState({ overviewMode: button.getAttribute("data-overview-mode") }));
   });
   root.querySelectorAll("[data-overview-year]").forEach((button) => {
     button.addEventListener("click", () => updateState({ overviewYear: Number(button.getAttribute("data-overview-year")) }));
-  });
-  root.querySelectorAll("[data-overview-map]").forEach((button) => {
-    button.addEventListener("click", () => updateState({ overviewMapMetric: button.getAttribute("data-overview-map") }));
-  });
-  root.querySelectorAll(".map-bubble").forEach((bubble) => {
-    const openAtlas = () => {
-      updateState({ selectedPref: bubble.getAttribute("data-pref-code"), regionMetric: state.overviewMapMetric || "age65Pct" });
-      window.location.hash = "#/regions";
-    };
-    bubble.addEventListener("click", openAtlas);
-    bubble.addEventListener("keydown", (event) => { if (event.key === "Enter") openAtlas(); });
   });
   const yenInput = root.querySelector("#ov-calc-yen");
   yenInput?.addEventListener("change", () => updateState({ calcYen: Math.max(1000, Number(yenInput.value) || 1000000) }));
